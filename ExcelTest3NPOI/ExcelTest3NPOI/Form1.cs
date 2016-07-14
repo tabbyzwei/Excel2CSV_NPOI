@@ -88,14 +88,20 @@ namespace ExcelTest3NPOI
         public void sheetProcess(ISheet Sheet)
         {
             String strTemp = "";
-            IRow row;
-            
-            short indexColor;
+            ICell srcCell;
+            ICell tempCell;
+            IRow tempRow;
+            int tempRowIndex = 0;
+
+            //test only
+            int RowTotal = 0;
+            int RowYellow = 0;
 
             //get sheet message
             sheetInfo si = sheetParse(Sheet);
             //create workbook
-            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFWorkbook tempWorkbook = new XSSFWorkbook();
+            ISheet tempSheet = tempWorkbook.CreateSheet(Sheet.SheetName + "_temp");
 
             //if error show error message
             if (!si.ErrorMessage.Equals(""))
@@ -105,30 +111,73 @@ namespace ExcelTest3NPOI
             //no error,copy sheet to new sheet
             else
             {
+                //Copy header message
+                tempRow = tempSheet.CreateRow(tempRowIndex);
+                tempRowIndex++;
+                if (tempRow != null)
+                {
+                    for (int k = 0; k < si.RowIndex.Length; k++)
+                    {
+                        srcCell = Sheet.GetRow(0).GetCell(si.RowIndex[k]);
+                        tempCell = tempRow.CreateCell(k);
+                        if (srcCell != null && tempCell != null)
+                        {
+                            copyCellTo(tempCell, srcCell);
+                        }
+                    }
+                }
+
+                //find right Row
                 for (int i = 1; i < si.RowMax; i++)
                 {
                     //row = Sheet.GetRow(i);
-                    ICell cell = Sheet.GetRow(i).GetCell(si.RowIndex[0]);
-                    if (cell != null)
+                    srcCell = Sheet.GetRow(i).GetCell(si.RowIndex[0]);
+                    if (srcCell != null)
                     {
-                        strTemp = cell.StringCellValue;
-                        ICellStyle style = cell.CellStyle;
+                        RowTotal++;
+                        strTemp = srcCell.StringCellValue;
+                        ICellStyle style = srcCell.CellStyle;
                         IColor color = style.FillForegroundColorColor;
                         byte[] RGB = IndexedColors.Yellow.RGB;
                         if (color != null)
                         {
-
+                            //if Cell color Equals Yellow
                             if (strTemp.Equals("open") && RGB[0]==color.RGB[0] && RGB[1] == color.RGB[1] && RGB[2] == color.RGB[2])
                             {
-                                //strTemp = row.GetCell(si.RowIndex[7]).StringCellValue;
-                                if (!strTemp.Equals(""))
+                                RowYellow++;
+                                //if Vender CN not empty
+                                srcCell = Sheet.GetRow(i).GetCell(si.RowIndex[7]);
+                                if (srcCell != null)
                                 {
-
+                                    strTemp = srcCell.CellType.ToString();
+                                    if (!strTemp.Equals("Blank"))
+                                    {
+                                        tempRow = tempSheet.CreateRow(tempRowIndex);
+                                        tempRowIndex++;
+                                        for (int k  = 0; k < si.RowIndex.Length; k++)
+                                        {
+                                            srcCell = Sheet.GetRow(i).GetCell(si.RowIndex[k]);
+                                            tempCell = tempRow.CreateCell(k);
+                                            if (srcCell != null && tempCell != null)
+                                            {
+                                                copyCellTo(tempCell, srcCell);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
+            for (int k = 0; k < si.RowIndex.Length; k++)
+            {
+                tempSheet.AutoSizeColumn(k);
+            }
+            MessageBox.Show(Sheet.SheetName + "-- RowMax: " + si.RowMax + " RowFound: " + RowTotal+ " RowYellow: " + RowYellow +"\r\n Row not lost: " + (RowTotal+1 == si.RowMax));
+            using (FileStream fs = new FileStream(pathOutputDirection + "\\" + Sheet.SheetName + ".xlsx", FileMode.Create, FileAccess.Write))
+            {
+                tempWorkbook.Write(fs);
             }
         }
         public sheetInfo sheetParse(ISheet Sheet)
@@ -166,6 +215,19 @@ namespace ExcelTest3NPOI
             }
             return si;
         }
+        //copy cell
+        public void copyCellTo(ICell tarCell, ICell srcCell)
+        {
+            switch (srcCell.CellType)
+            {
+                case CellType.Numeric:
+                    tarCell.SetCellValue(srcCell.NumericCellValue);
+                    break;
+                default:
+                    tarCell.SetCellValue(srcCell.StringCellValue);
+                    break;
+            }
+        }
 
         private void btnOpenFile_Click(object sender, EventArgs e)
         {
@@ -179,8 +241,12 @@ namespace ExcelTest3NPOI
                     pathDirection = System.IO.Path.GetDirectoryName(pathFile);
                     //get file name
                     fileName = System.IO.Path.GetFileNameWithoutExtension(pathFile);
-                    //output direction
-                    pathOutputDirection = pathDirection + "\\" + fileName;
+                    //Creat new folder
+                    pathOutputDirection = pathDirection + @"\Result_" + fileName;
+                    if (!Directory.Exists(pathOutputDirection))
+                    {
+                        Directory.CreateDirectory(pathOutputDirection);
+                    }
                     //debug output file
                     System.Diagnostics.Debug.WriteLine("\r\nDebug Output:\r\n" + pathOutputDirection + "\r\n");
                     //process the file
