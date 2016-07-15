@@ -1,8 +1,4 @@
-!ExcelTest3NPOI/ExcelTest3NPOI/bin/Debug
-!ExcelTest3NPOI/ExcelTest3NPOI/bin/Debug/ExcelTest3NPOI.exe
-
-
-!ExcelTest3NPOI/ExcelTest3NPOI/bin/Debug/*.exe
+ExcelTest3NPOI/ExcelTest3NPOI/bin/Debug
+!*.exe
 ExcelTest3NPOI/ExcelTest3NPOI/bin/Release
-!ExcelTest3NPOI/ExcelTest3NPOI/bin/Release/*.exe
 ExcelTest3NPOI/ExcelTest3NPOI/obj/
