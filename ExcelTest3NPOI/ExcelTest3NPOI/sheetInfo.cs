@@ -10,6 +10,7 @@ namespace ExcelTest3NPOI
         private int rowMax;
         private int listMax;
         private int[] rowIndex = new int[10];
+        private string errorMessage = "";
         #region getter,setter
         public int RowMax
         {
@@ -47,6 +48,19 @@ namespace ExcelTest3NPOI
             set
             {
                 rowIndex = value;
+            }
+        }
+
+        public string ErrorMessage
+        {
+            get
+            {
+                return errorMessage;
+            }
+
+            set
+            {
+                errorMessage = value;
             }
         }
 
