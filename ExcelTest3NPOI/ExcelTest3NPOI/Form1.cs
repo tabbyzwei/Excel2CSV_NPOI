@@ -1,5 +1,7 @@
-﻿using NPOI.HSSF.UserModel;
+﻿using GemBox.Spreadsheet;
+using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
+using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
@@ -35,6 +37,7 @@ namespace ExcelTest3NPOI
 
         public void fileProcess(String filePath)
         {
+
             int srcSheetCount;
 
             FileInfo fiSource = new FileInfo(filePath);
@@ -142,7 +145,7 @@ namespace ExcelTest3NPOI
                         if (color != null)
                         {
                             //if Cell color Equals Yellow
-                            if (strTemp.Equals("open") && RGB[0]==color.RGB[0] && RGB[1] == color.RGB[1] && RGB[2] == color.RGB[2])
+                            if (strTemp.Equals("open") && RGB[0] == color.RGB[0] && RGB[1] == color.RGB[1] && RGB[2] == color.RGB[2])
                             {
                                 RowYellow++;
                                 //if Vender CN not empty
@@ -154,7 +157,7 @@ namespace ExcelTest3NPOI
                                     {
                                         tempRow = tempSheet.CreateRow(tempRowIndex);
                                         tempRowIndex++;
-                                        for (int k  = 0; k < si.RowIndex.Length; k++)
+                                        for (int k = 0; k < si.RowIndex.Length; k++)
                                         {
                                             srcCell = Sheet.GetRow(i).GetCell(si.RowIndex[k]);
                                             tempCell = tempRow.CreateCell(k);
@@ -170,20 +173,46 @@ namespace ExcelTest3NPOI
                     }
                 }
             }
+            //auto fit
             for (int k = 0; k < si.RowIndex.Length; k++)
             {
                 tempSheet.AutoSizeColumn(k);
             }
-            MessageBox.Show(Sheet.SheetName + "-- RowMax: " + si.RowMax + " RowFound: " + RowTotal+ " RowYellow: " + RowYellow +"\r\n Row not lost: " + (RowTotal+1 == si.RowMax));
-            using (FileStream fs = new FileStream(pathOutputDirection + "\\" + Sheet.SheetName + ".xlsx", FileMode.Create, FileAccess.Write))
+            //MessageBox.Show(Sheet.SheetName + "-- RowMax: " + si.RowMax + " RowFound: " + RowTotal + " RowYellow: " + RowYellow + "\r\n Row not lost: " + (RowTotal + 1 == si.RowMax));
+
+            CellRangeAddress range = new CellRangeAddress(0,1,0,1);
+            IAutoFilter filterTest =  tempSheet.SetAutoFilter(range);
+
+            ISheet tempVenderSheet = tempWorkbook.CreateSheet(Sheet.SheetName + "_VenderCSV");
+
+
+
+            var fileName = pathOutputDirection + "\\" + Sheet.SheetName + ".xlsx";
+            var fileName2 = pathOutputDirection + "\\" + Sheet.SheetName + ".csv";
+            //save xslx file
+            using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
                 tempWorkbook.Write(fs);
             }
+
+            //Only Convert first sheet(descending order)
+            SpreadsheetInfo.SetLicense("EQU2-1000-0000-000U");
+            ExcelFile ef = ExcelFile.Load(pathFile);
+
+            ExcelFile ef2 = new ExcelFile();
+            foreach (ExcelWorksheet item in ef.Worksheets)
+            {
+                if (item.Name.Equals(Sheet.SheetName))
+                {
+                    ExcelWorksheet ws = ef2.Worksheets.AddCopy(Sheet.SheetName, item);
+                }
+            }
+            ef2.Save(fileName2, SaveOptions.CsvDefault);
         }
         public sheetInfo sheetParse(ISheet Sheet)
         {
             sheetInfo si = new sheetInfo();
-            
+
             IRow row = Sheet.GetRow(0);
             si.RowMax = Sheet.LastRowNum;
             si.ListMax = row.LastCellNum;
